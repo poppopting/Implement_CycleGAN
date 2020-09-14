@@ -19,10 +19,6 @@ from utils import ImagePool
 from layers import Generator, Discriminator
 
 
-# In[2]:
-
-
-
 root = '/home/andy_cgt/summer2winter_yosemite'
 
 # create dataset
