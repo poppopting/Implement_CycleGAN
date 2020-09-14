@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
+# basic package
 import os
 import gc
 import glob
@@ -12,14 +7,14 @@ import numpy as np
 import itertools
 from PIL import Image
 from tqdm.auto import tqdm
-
+# pytorch package
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
-
+# my package
 from utils import ImagePool
 from layers import Generator, Discriminator
 
@@ -27,24 +22,10 @@ from layers import Generator, Discriminator
 # In[2]:
 
 
-os.getcwd()
-
-
-# In[3]:
-
-
-os.listdir('/home/andy_cgt')
-
-
-# In[4]:
-
 
 root = '/home/andy_cgt/summer2winter_yosemite'
 
-
-# In[5]:
-
-
+# create dataset
 class ImageFolder(Dataset):
     
     def __init__(self, root_dir, mode, transform=None):
@@ -69,9 +50,7 @@ class ImageFolder(Dataset):
         return max(self.len_A, self.len_B)
 
 
-# In[6]:
-
-
+# define intial weight function
 def init_weights(model):
     classname = model.__class__.__name__
     if hasattr(model, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1) :
@@ -82,11 +61,7 @@ def init_weights(model):
         nn.init.constant_(model.bias.data, 0.0)
 
 
-# ### LAMBDA = 10, D_RATIO = 2
-
-# In[7]:
-
-
+# define hyperparamter
 LR = 0.0002
 BATCH_SIZE = 1
 N_EPOCHES = 200
@@ -128,10 +103,6 @@ scheduler_G = optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=LR_LAMBDA)
 scheduler_D_A = optim.lr_scheduler.LambdaLR(optimizer_D_A, lr_lambda=LR_LAMBDA)
 scheduler_D_B = optim.lr_scheduler.LambdaLR(optimizer_D_B, lr_lambda=LR_LAMBDA)
 
-
-# In[8]:
-
-
 # transform
 train_transform = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE), Image.BICUBIC), 
                                       transforms.RandomCrop((INPUT_SIZE, INPUT_SIZE)), 
@@ -142,26 +113,15 @@ test_transform = transforms.Compose([transforms.Resize((INPUT_SIZE, INPUT_SIZE),
                                      transforms.ToTensor(),
                                      transforms.Normalize(mean=(0.5,0.5,0.5), std=(0.5,0.5,0.5))])
 
-
-# In[9]:
-
-
 # dataset
 trainset = ImageFolder(root_dir=root, mode='train', transform=train_transform)
 testset = ImageFolder(root_dir=root, mode='test', transform=test_transform)
-
-
-# In[10]:
-
 
 # dataloader
 train_loader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(testset, batch_size=BATCH_SIZE, shuffle=False)
 
-
-# In[11]:
-
-
+# training process
 train_D_As = []
 train_D_Bs= []
 train_G_A2Bs = []
@@ -242,14 +202,7 @@ for epo in tqdm(range(N_EPOCHES)):
         train_D_B.append(evalB_loss.item())
         train_G_A2B.append(G_A2B_loss.item())
         train_G_B2A.append(G_B2A_loss.item())
-        
-#         del real_A, real_B, fake_A, fake_B
-#         del fake_A2B, fake_B2A, eval_fake_A, eval_fake_B, eval_real_A, eval_real_B
-#         del real_A_ones, real_B_ones, fake_A_ones, fake_B_ones, fake_A_zeros, fake_B_zeros
-#         del G_A2B_loss, cycleA_loss, G_B2A_loss, cycleB_loss, full_loss
-#         del eval_real_A_loss, eval_fake_A_loss, evalA_loss
-#         del eval_real_B_loss, eval_fake_B_loss, evalB_loss
-#         gc.collect()
+
         torch.cuda.empty_cache()
     scheduler_G.step()
     scheduler_D_A.step()
@@ -339,16 +292,9 @@ for epo in tqdm(range(N_EPOCHES)):
 
 
 # ### Evaluation
-
-# In[12]:
-
-
 import matplotlib.pyplot as plt
 
-
-# In[13]:
-
-
+# training part
 plt.figure(figsize=(12,10))
 plt.subplot(2,2,1)
 plt.plot(train_D_As)
@@ -364,10 +310,7 @@ plt.plot(train_G_B2As)
 plt.title('train_G_B2As, LAMBDA = {0}, D_RATIO = {1}'.format(LAMBDA, D_RATIO))
 plt.show()
 
-
-# In[14]:
-
-
+# testing part
 plt.figure(figsize=(12,10))
 plt.subplot(2,2,1)
 plt.plot(test_D_As)
@@ -384,14 +327,7 @@ plt.title('test_G_B2As, LAMBDA = {0}, D_RATIO = {1}'.format(LAMBDA, D_RATIO))
 plt.show()
 
 
-# In[15]:
-
-
 import pickle
-
-
-# In[16]:
-
 
 losses = {'train_D_As': train_D_As,
           'train_D_Bs': train_D_Bs,
@@ -403,20 +339,9 @@ losses = {'train_D_As': train_D_As,
           'test_G_B2As': test_G_B2As}
 
 
-# In[17]:
-
-
 pickle.dump(losses, open('losses/losses_L{0}_D{1}_version3.pkl'.format(LAMBDA, D_RATIO), 'wb'))
-
-
-# In[18]:
-
-
 torch.save(G_A2B, 'models/G_A2B_L{0}_D{1}_version3.pkl'.format(LAMBDA, D_RATIO))
 torch.save(G_B2A, 'models/G_B2A_L{0}_D{1}_version3.pkl'.format(LAMBDA, D_RATIO))
-
-
-# In[ ]:
 
 
 os.mkdir('Test_Result/L{0}_D{1}'.format(LAMBDA, D_RATIO))
@@ -424,15 +349,7 @@ os.mkdir('Test_Result/L{0}_D{1}/Domain_A'.format(LAMBDA, D_RATIO))
 os.mkdir('Test_Result/L{0}_D{1}/Domain_B'.format(LAMBDA, D_RATIO))
 
 
-# In[98]:
-
-
-import matplotlib.pyplot as plt
-
-
-# In[99]:
-
-
+# convert tensor to image
 def tensor2im(input_image, imtype=np.uint8):
 
     image_tensor = input_image.data
@@ -443,9 +360,7 @@ def tensor2im(input_image, imtype=np.uint8):
     return image_numpy.astype(imtype)
 
 
-# In[116]:
-
-
+# save testing image
 cnt = 0
 for real_A, real_B in tqdm(test_loader):
     
@@ -485,28 +400,7 @@ for real_A, real_B in tqdm(test_loader):
     
     cnt += 1
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[100]:
-
-
+# define function to compare result
 def show_3_plot(real, fake, reconstruct):
     plt.figure(figsize=(12,10))
     plt.subplot(1,3,1)
@@ -517,21 +411,7 @@ def show_3_plot(real, fake, reconstruct):
     plt.imshow(tensor2im(reconstruct, imtype=np.uint8))
     
 
-
-# In[101]:
-
-
 show_3_plot(real_A, fake_B, fake_B2A)
-
-
-# In[102]:
-
-
 show_3_plot(real_B, fake_A, fake_A2B)
-
-
-# In[ ]:
-
-
 
 
